@@ -659,6 +659,7 @@ webui.DiffView = function(sideBySide, hunkSelectionAllowed, parent) {
         }
         if (self.gitCmd) {
             var fullCmd = self.gitCmd;
+            fullCmd += " --no-ext-diff";
             if (self.complete) {
                 fullCmd += " --unified=999999999";
             } else {
@@ -978,6 +979,24 @@ webui.DiffView = function(sideBySide, hunkSelectionAllowed, parent) {
         });
     }
 
+    self.openExternalDiff = function() {
+        if (self.gitCmd) {
+            var fullCmd = self.gitCmd;
+            fullCmd += " --ext-diff";
+            if (self.gitDiffOpts) {
+                fullCmd += " " + self.gitDiffOpts.join(" ")
+            }
+            if (self.gitFile) {
+                fullCmd += " -- " + self.gitFile;
+            }
+            webui.git(fullCmd);
+        }
+    };
+
+    self.refreshView = function() {
+        self.update();
+    };
+
     self.switchToExploreView = function() {
         if (! self.currentDiff) {
             return;
@@ -991,6 +1010,8 @@ webui.DiffView = function(sideBySide, hunkSelectionAllowed, parent) {
     if (! (parent instanceof webui.CommitExplorerView)) {
         html +=
             '<div class="panel-heading btn-toolbar" role="toolbar">' +
+                '<button type="button"  class="btn btn-sm btn-default diff-refresh">Refresh</button>' +
+                '<button type="button"  class="btn btn-sm btn-default diff-external">External Diff</button>' +
                 '<button type="button" class="btn btn-sm btn-default diff-ignore-whitespace" data-toggle="button">Ignore Whitespace</button>' +
                 '<button type="button" class="btn btn-sm btn-default diff-context-all" data-toggle="button">Complete file</button>' +
                 '<div class="btn-group btn-group-sm">' +
@@ -1042,6 +1063,9 @@ webui.DiffView = function(sideBySide, hunkSelectionAllowed, parent) {
     $(".diff-unstage", self.element).click(function() { self.applySelection(true, true); });
 
     $(".diff-explore", self.element).click(function() { self.switchToExploreView(); });
+
+    $(".diff-external", self.element).click(function() { self.openExternalDiff(); });
+    $(".diff-refresh", self.element).click(function() { self.refreshView(); });
 
     self.context = 3;
     self.complete = false;
@@ -1589,7 +1613,7 @@ webui.ChangedFilesView = function(workspaceView, type, label) {
         }
     };
 
-    self.cancel = function() {
+    self.discard = function() {
         prevScrollTop = fileListContainer.scrollTop;
         var files = self.getFileList();
         if (files.length != 0) {
@@ -1613,7 +1637,7 @@ webui.ChangedFilesView = function(workspaceView, type, label) {
                             '</div>' +
                         '</div>')[0];
     if (type == "working-copy") {
-        var buttons = [{ name: "Stage", callback: self.process }, { name: "Cancel", callback: self.cancel }];
+        var buttons = [{ name: "Stage", callback: self.process }, { name: "Discard", callback: self.discard }];
     } else {
         var buttons = [{ name: "Unstage", callback: self.process }];
     }
